@@ -32,5 +32,5 @@ object SqlParser extends RegexParsers {
   def query = operation~fields~from~table~opt(where) ^^ { 
     case operation~fields~from~table~where => Query(table, fields, where)
   }
-  def parse(input: String) = parseAll(query, input)
+  def parse(input: String): Option[Query] = Option(parseAll(query, input).getOrElse(null))
 }
