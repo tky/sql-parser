@@ -35,5 +35,14 @@ class SqlParserSpec extends FunSpec with Matchers {
       query.fields should be(List(Field("id"), Field("name")))
       query.terms should be(Some(Term("id", "=",  1)))
     }
+
+    it("should parse <, >, <=, >= exprs") {
+      SqlParser.parse("select id, name from employ where id > 1 ").get.terms should be(Some(Term("id", ">", 1)))
+      SqlParser.parse("select id, name from employ where id < 1 ").get.terms should be(Some(Term("id", "<", 1)))
+      SqlParser.parse("select id, name from employ where id <= 1 ").get.terms should be(Some(Term("id", "<=", 1)))
+      SqlParser.parse("select id, name from employ where id =< 1 ").get.terms should be(Some(Term("id", "=<", 1)))
+      SqlParser.parse("select id, name from employ where id >= 1 ").get.terms should be(Some(Term("id", ">=", 1)))
+      SqlParser.parse("select id, name from employ where id => 1 ").get.terms should be(Some(Term("id", "=>", 1)))
+    }
   }
 }

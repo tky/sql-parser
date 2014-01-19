@@ -25,7 +25,7 @@ object SqlParser extends RegexParsers {
   def from = "from" ^^ { _ => From }
   def where = "where"~>term
 
-  def expr = "=".r
+  def expr = "[=<>]+".r
   def termKey = "[a-zA-Z]+".r
   def termValue = "[a-zA-Z0-9']+".r
   def term = termKey~expr~termValue ^^ { case key~expr~value =>
