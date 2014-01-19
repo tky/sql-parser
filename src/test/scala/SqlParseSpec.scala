@@ -20,12 +20,20 @@ class SqlParserSpec extends FunSpec with Matchers {
 
     it("should parse simple where query") {
       val result = SqlParser.parse("select id, name from employ where name = 'tky' ")
-      println(result)
       result.isEmpty should be(false)
       val query = result.get
       query.table should be(Table("employ"))
       query.fields should be(List(Field("id"), Field("name")))
       query.terms should be(Some(Term("name", "=",  "tky")))
+    }
+
+    it("should parse simple where query with number") {
+      val result = SqlParser.parse("select id, name from employ where id = 1 ")
+      result.isEmpty should be(false)
+      val query = result.get
+      query.table should be(Table("employ"))
+      query.fields should be(List(Field("id"), Field("name")))
+      query.terms should be(Some(Term("id", "=",  1)))
     }
   }
 }

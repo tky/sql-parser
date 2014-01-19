@@ -6,11 +6,12 @@
  */
 
 import scala.util.parsing.combinator._
+import scala.util.control.Exception._
 
 case class Field(name: String)
 case class Table(name: String)
 case class Query(table: Table, fields: List[Field], terms: Option[Term])
-case class Term(key: String, expr: String, value: Object)
+case class Term(key: String, expr: String, value: Any)
 
 trait Operation
 object Select extends Operation
@@ -26,8 +27,13 @@ object SqlParser extends RegexParsers {
 
   def expr = "=".r
   def termKey = "[a-zA-Z]+".r
-  def termValue = "[a-zA-Z']+".r
-  def term = termKey~expr~termValue ^^ { case key~expr~value => Term(key ,expr ,value.replaceAll("'", "")) }
+  def termValue = "[a-zA-Z0-9']+".r
+  def term = termKey~expr~termValue ^^ { case key~expr~value =>
+    allCatch opt value.toInt match {
+      case Some(v) => Term(key ,expr ,v)
+      case None => Term(key ,expr ,value.replaceAll("'", ""))
+    }
+  }
 
   def query = operation~fields~from~table~opt(where) ^^ { 
     case operation~fields~from~table~where => Query(table, fields, where)
