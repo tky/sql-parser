@@ -10,5 +10,10 @@ class SqlParserSpec extends FunSpec with Matchers {
     it("should parse where simple phrase") {
       SqlParser.parse("select * from employ where id = 1").isEmpty should be(false)
     }
+
+    it("should parse mutl where phrase") {
+      SqlParser.parse("select * from employ where id = 1 AND brach_id = 1").isEmpty should be(false)
+      SqlParser.parse("select * from employ where id = 1 OR brach_id = 1").isEmpty should be(false)
+    }
   }
 }

@@ -35,16 +35,18 @@ object SqlParser extends RegexParsers {
 
   def literalValue = numericLiteral | stringLiteral
   def numericLiteral = "[0-9]+".r ^^ { f =>  NumericExpr(f.toInt) }
-  def stringLiteral = "[a-zA-Z]+".r ^^ { f => StringExpr(f) }
+  def stringLiteral = "[a-zA-Z_]+".r ^^ { f => StringExpr(f) }
   def nullLiteral = "null".r
   def currentTime = "CURRENT_TIME".r
   def currentDate = "CURRENT_DATE".r
   def currentTimeStamp = "CURRENT_TIMESTAMP".r
-  def binaryOperator = "=|AND".r
+  def binaryOperator = "=|AND|OR".r
 
-  def expr: SqlParser.Parser[Expr] =
-    literalValue~binaryOperator~literalValue ^^ { _ => DummyExpr } |
-    expr~binaryOperator~expr ^^ { _ => DummyExpr } 
+  def expr: SqlParser.Parser[Expr] = {
+    def _expr: SqlParser.Parser[Expr] = literalValue~binaryOperator~literalValue ^^ { _ => DummyExpr }
+    repsep(_expr, binaryOperator) ^^ { _ => DummyExpr } |
+    _expr
+  }
 
   def query = operation~fields~from~table~opt(where) ^^ { 
     case operation~fields~from~table~where => Query(table, fields)
