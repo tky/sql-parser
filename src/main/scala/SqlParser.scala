@@ -1,13 +1,3 @@
-/**
- * sql :==  select fields from table where filters
- * fields :== [a-zA-Z]+
- * table :== [a-zA-Z]+
- * filters :== filter { "and" filter}
- * filter :== 
- * terms :== term { "and" term }
- * term :== [a-zA-Z] {"=" [a-zA-Z]}
- */
-
 import scala.util.parsing.combinator._
 import scala.util.control.Exception._
 
