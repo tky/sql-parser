@@ -44,6 +44,8 @@ object SqlParser extends RegexParsers {
 
   def expr: SqlParser.Parser[Expr] = {
     def _expr: SqlParser.Parser[Expr] = literalValue~binaryOperator~literalValue ^^ { _ => DummyExpr }
+    "("~_expr~")" ^^ { _ => DummyExpr } |
+    "("~expr~")" ^^ { _ => DummyExpr } |
     repsep(_expr, binaryOperator) ^^ { _ => DummyExpr } |
     _expr
   }
