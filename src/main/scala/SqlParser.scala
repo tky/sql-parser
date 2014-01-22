@@ -1,7 +1,9 @@
 /**
- * sql :==  select fields from table where terms
+ * sql :==  select fields from table where filters
  * fields :== [a-zA-Z]+
  * table :== [a-zA-Z]+
+ * filters :== filter { "and" filter}
+ * filter :== 
  * terms :== term { "and" term }
  * term :== [a-zA-Z] {"=" [a-zA-Z]}
  */
@@ -11,7 +13,7 @@ import scala.util.control.Exception._
 
 case class Field(name: String)
 case class Table(name: String)
-case class Query(table: Table, fields: List[Field], terms: Option[List[Term]])
+case class Query(table: Table, fields: List[Field], terms: Option[List[List[Term]]])
 case class Term(key: String, expr: String, value: Any)
 
 trait Operation
@@ -30,7 +32,7 @@ object SqlParser extends RegexParsers {
   def expr = "[=<>]+".r
   def termKey = "[a-zA-Z]+".r
   def termValue = "[a-zA-Z0-9']+".r
-  def terms = term~rep("and"~>term) ^^ { case term~rest => term ++ rest.flatten }
+  def terms = term~rep("and"~>term) ^^ { case term~rest => List(term ++ rest.flatten) }
   def term = termKey~expr~termValue ^^ { case key~expr~value =>
     allCatch opt value.toInt match {
       case Some(v) => List(Term(key ,expr ,v))

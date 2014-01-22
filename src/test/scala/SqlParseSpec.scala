@@ -24,7 +24,7 @@ class SqlParserSpec extends FunSpec with Matchers {
       val query = result.get
       query.table should be(Table("employ"))
       query.fields should be(List(Field("id"), Field("name")))
-      query.terms should be(Some(List(Term("name", "=",  "tky"))))
+      query.terms should be(Some(List(List(Term("name", "=",  "tky")))))
     }
 
     it("should parse simple where query with number") {
@@ -33,7 +33,7 @@ class SqlParserSpec extends FunSpec with Matchers {
       val query = result.get
       query.table should be(Table("employ"))
       query.fields should be(List(Field("id"), Field("name")))
-      query.terms should be(Some(List(Term("id", "=",  1))))
+      query.terms should be(Some(List(List(Term("id", "=",  1)))))
     }
 
     it("should parse <, >, <=, >= exprs") {
@@ -47,7 +47,7 @@ class SqlParserSpec extends FunSpec with Matchers {
 
     it("should parse query with and") {
       val r = SqlParser.parse("select * from employ where id = 1 and name = 'tky'").get
-      r.terms should be(Some(List(Term("id", "=", 1), Term("name", "=", "tky"))))
+      r.terms should be(Some(List(List(Term("id", "=", 1), Term("name", "=", "tky")))))
     }
   }
 }
