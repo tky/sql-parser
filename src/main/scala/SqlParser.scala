@@ -13,13 +13,17 @@ import scala.util.control.Exception._
 
 case class Field(name: String)
 case class Table(name: String)
-case class Query(table: Table, fields: List[Field], terms: Option[List[List[Term]]])
+case class Query(table: Table, fields: List[Field])
 case class Term(key: String, expr: String, value: Any)
 
 trait Operation
 object Select extends Operation
 object From
 
+trait Expr
+case class StringExpr(value: String) extends Expr
+case class NumericExpr(value: Int) extends Expr
+object DummyExpr extends Expr // <- こいつが無くなれば終了？
 
 object SqlParser extends RegexParsers {
   def field = "[a-zA-Z*]+".r ^^ { f => Field(f) }
@@ -27,21 +31,26 @@ object SqlParser extends RegexParsers {
   def fields = repsep(field, ",")
   def operation = "select" ^^ { _ => Select }
   def from = "from" ^^ { _ => From }
-  def where = "where"~>terms
+  def where = "where"~>expr
 
-  def expr = "[=<>]+".r
-  def termKey = "[a-zA-Z]+".r
-  def termValue = "[a-zA-Z0-9']+".r
-  def terms = term~rep("and"~>term) ^^ { case term~rest => List(term ++ rest.flatten) }
-  def term = termKey~expr~termValue ^^ { case key~expr~value =>
-    allCatch opt value.toInt match {
-      case Some(v) => List(Term(key ,expr ,v))
-      case None => List(Term(key ,expr ,value.replaceAll("'", "")))
-    }
-  }
+  def literalValue = numericLiteral | stringLiteral
+  def numericLiteral = "[0-9]+".r ^^ { f =>  NumericExpr(f.toInt) }
+  def stringLiteral = "[a-zA-Z]+".r ^^ { f => StringExpr(f) }
+  def nullLiteral = "null".r
+  def currentTime = "CURRENT_TIME".r
+  def currentDate = "CURRENT_DATE".r
+  def currentTimeStamp = "CURRENT_TIMESTAMP".r
+  def binaryOperator = "=|AND".r
+
+  def expr: SqlParser.Parser[Expr] =
+    literalValue~binaryOperator~literalValue ^^ { _ => DummyExpr } |
+    expr~binaryOperator~expr ^^ { _ => DummyExpr } 
 
   def query = operation~fields~from~table~opt(where) ^^ { 
-    case operation~fields~from~table~where => Query(table, fields, where)
+    case operation~fields~from~table~where => Query(table, fields)
   }
-  def parse(input: String): Option[Query] = Option(parseAll(query, input).getOrElse(null))
+  def parse(input: String): Option[Query] = {
+    println(parseAll(query, input))
+    Option(parseAll(query, input).getOrElse(null))
+  }
 }
