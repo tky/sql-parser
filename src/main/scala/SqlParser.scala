@@ -4,7 +4,6 @@ import scala.util.control.Exception._
 case class Field(name: String)
 case class Table(name: String)
 case class Query(table: Table, fields: List[Field])
-case class Term(key: String, expr: String, value: Any)
 
 trait Operation
 object Select extends Operation
@@ -13,6 +12,9 @@ object From
 trait Expr
 case class StringExpr(value: String) extends Expr
 case class NumericExpr(value: Int) extends Expr
+case class Filter(key: String, value: Expr, operator: String) extends Expr
+case class Term(filters: List[Filter]) extends Expr
+case class Terms(terms: List[Term]) extends Expr
 object DummyExpr extends Expr // <- こいつが無くなれば終了？
 
 object SqlParser extends RegexParsers {
@@ -35,7 +37,10 @@ object SqlParser extends RegexParsers {
   def expr: SqlParser.Parser[Expr] = {
     def _expr: SqlParser.Parser[Expr] =
       repsep(literalValue~binaryOperator~literalValue, binaryOperator) ^^ { _ => DummyExpr }  |
-      literalValue~binaryOperator~literalValue ^^ { _ => DummyExpr } 
+      literalValue~binaryOperator~literalValue ^^ { case key~operator~value =>  key match {
+          case StringExpr(v) => Filter(v, value, operator)
+        }
+      } 
 
     "("~_expr~")"~rep(binaryOperator~expr) ^^ { _ => DummyExpr } |
     "("~_expr~")" ^^ { _ => DummyExpr } |

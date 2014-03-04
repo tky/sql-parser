@@ -5,6 +5,8 @@ class SqlParserSpec extends FunSpec with Matchers {
   describe("SqlParse") {
     it("should parse simple query") {
       SqlParser.parse("select * from employ").isEmpty should be(false)
+      val result = SqlParser.parse("select * from employ").get
+      result.table should be(Table("employ"))
     }
 
     it("should parse where simple phrase") {
