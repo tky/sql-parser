@@ -3,7 +3,7 @@ import scala.util.control.Exception._
 
 case class Field(name: String)
 case class Table(name: String)
-case class Query(table: Table, fields: List[Field])
+case class Query(table: Table, fields: List[Field], terms: Option[List[Terms]])
 
 trait Operation
 object Select extends Operation
@@ -15,7 +15,6 @@ case class NumericExpr(value: Int) extends Expr
 case class Filter(key: String, value: Expr, operator: String) extends Expr
 case class Term(filters: List[Filter]) extends Expr
 case class Terms(terms: List[Term]) extends Expr
-object DummyExpr extends Expr // <- こいつが無くなれば終了？
 
 object SqlParser extends RegexParsers {
   def field = "[a-zA-Z*]+".r ^^ { f => Field(f) }
@@ -34,25 +33,34 @@ object SqlParser extends RegexParsers {
   def currentTimeStamp = "CURRENT_TIMESTAMP".r
   def binaryOperator = "=|AND|OR".r
 
-  def expr: SqlParser.Parser[Expr] = {
-    def _expr: SqlParser.Parser[Expr] =
-      repsep(literalValue~binaryOperator~literalValue, binaryOperator) ^^ { _ => DummyExpr }  |
-      literalValue~binaryOperator~literalValue ^^ { case key~operator~value =>  key match {
-          case StringExpr(v) => Filter(v, value, operator)
+  def expr: SqlParser.Parser[Object] = {
+    def _expr: SqlParser.Parser[Object] =
+      repsep(literalValue~binaryOperator~literalValue, binaryOperator) ^^ { case xs =>
+        xs.map { x => x match { case key~ope~value => Filter(key.toString, value, ope) }} 
+      } | literalValue~binaryOperator~literalValue ^^ { case key~operator~value =>  value match {
+          case StringExpr(v) => Filter(key.toString, value, operator)
+          case NumericExpr(v) => Filter(key.toString, value, operator)
         }
       } 
 
-    "("~_expr~")"~rep(binaryOperator~expr) ^^ { _ => DummyExpr } |
-    "("~_expr~")" ^^ { _ => DummyExpr } |
-    repsep(_expr, binaryOperator) ^^ { _ => DummyExpr } |
+// TODO:xsを処理
+    "("~_expr~")"~rep(binaryOperator~expr) ^^ { case ("("~v~")"~xs) => v } |
+    "("~_expr~")" ^^ { case "("~xs~")" => xs } |
+    repsep(_expr, binaryOperator) ^^ { xs => xs.map { xs => xs match {
+      case xs: List[_] => xs 
+      case x => List(x)
+    }}} |
     _expr
   }
 
   def query = operation~fields~from~table~opt(where) ^^ { 
-    case operation~fields~from~table~where => Query(table, fields)
+    case operation~fields~from~table~where => where match {
+      case Some(xs: List[List[Filter]]) => Query(table, fields, None)
+      case Some(xs: List[Filter]) => Query(table, fields, None)
+      case None => Query(table, fields, None)
+    }
   }
   def parse(input: String): Option[Query] = {
-    println(parseAll(query, input))
     Option(parseAll(query, input).getOrElse(null))
   }
 }

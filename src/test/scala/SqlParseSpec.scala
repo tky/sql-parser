@@ -7,17 +7,19 @@ class SqlParserSpec extends FunSpec with Matchers {
       SqlParser.parse("select * from employ").isEmpty should be(false)
       val result = SqlParser.parse("select * from employ").get
       result.table should be(Table("employ"))
+      result.fields should be(List(Field("*")))
     }
 
     it("should parse where simple phrase") {
-      SqlParser.parse("select * from employ where id = 1").isEmpty should be(false)
+      val result = SqlParser.parse("select * from employ where id = 1").get
+      result.table should be(Table("employ"))
+      result.fields should be(List(Field("*")))
     }
 
     it("should parse mutl where phrase") {
       SqlParser.parse("select * from employ where id = 1 AND brach_id = 1").isEmpty should be(false)
       SqlParser.parse("select * from employ where id = 1 OR brach_id = 1").isEmpty should be(false)
     }
-
     it("should parse simple query covered wtih ()") {
       SqlParser.parse("select * from employ where (id = 1)").isEmpty should be(false)
       SqlParser.parse("select * from employ where (id = 1 AND brach_id = 1)").isEmpty should be(false)
